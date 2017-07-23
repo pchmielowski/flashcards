@@ -1,5 +1,11 @@
 var start = new Date();
-var verbs = () => Array.from(window.document.getElementsByClassName('commonverb'));
+
+
+var verbs = () => throw "Choose language";
+// greek
+//var verbs = () => Array.from(window.document.getElementsByClassName('commonverb'));
+// italian
+//var verbs = () => Array.from(window.document.getElementsByClassName('wordcloud')[0].getElementsByTagName('a')).map(a => a.href)
 
 var verbAsString = () => Array.from(window.document.getElementById('verb').contentWindow.document.getElementById('present').nextSibling.tBodies[0].rows)
 				.map(it => [ it.cells[1].innerHTML, it.cells[2].innerHTML])

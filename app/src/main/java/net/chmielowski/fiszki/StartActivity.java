@@ -10,10 +10,17 @@ public class StartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
-        findViewById(R.id.greek)
-                .setOnClickListener(view -> {
-                    startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                    finish();
-                });
+        setLanguage(R.id.greek, DictionaryUtils.Lang.GREEK);
+        setLanguage(R.id.italian, DictionaryUtils.Lang.ITALIAN);
     }
+
+    private void setLanguage(int button, DictionaryUtils.Lang lang) {
+        findViewById(button).setOnClickListener(view -> {
+            final Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            intent.putExtra(MainActivity.LANGUAGE, lang);
+            startActivity(intent);
+            finish();
+        });
+    }
+
 }

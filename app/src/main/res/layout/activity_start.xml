@@ -20,11 +20,11 @@
 
     <TextView
         android:id="@+id/greek"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="12dp"
-        android:paddingStart="20dp"
-        android:paddingTop="12dp"
-        android:text="Greek"
-        android:textSize="18sp"/>
+        style="@style/Language"
+        android:text="Greek"/>
+
+    <TextView
+        android:id="@+id/italian"
+        style="@style/Language"
+        android:text="Italian"/>
 </LinearLayout>

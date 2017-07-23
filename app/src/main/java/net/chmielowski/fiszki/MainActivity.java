@@ -16,9 +16,11 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final String LANGUAGE = "language";
     private Random random = new Random();
     private Word word;
-    private List<Word> words = DictionaryUtils.shuffled();
+    private List<Word> words = DictionaryUtils.shuffled(
+            (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE));
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
