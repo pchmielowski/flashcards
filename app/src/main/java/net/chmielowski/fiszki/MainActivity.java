@@ -9,14 +9,17 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.annimon.stream.Optional;
 import com.annimon.stream.Stream;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String LANGUAGE = "language";
+    private static final String WORDS = "words";
     private Random random = new Random();
     private Word word;
     private List<Word> words;
@@ -25,8 +28,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        words = DictionaryUtils.shuffled(
-                (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE));
+        Optional.ofNullable(savedInstanceState)
+                .map(state -> state.getSerializable(WORDS))
+                .executeIfPresent(w -> words = (List<Word>) w)
+                .executeIfAbsent(() -> words = DictionaryUtils.shuffled(
+                        (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE)));
+
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         findViewById(R.id.show).setOnClickListener(view -> {
             vibrate(v);
@@ -42,6 +49,12 @@ public class MainActivity extends AppCompatActivity {
         });
         ((ProgressBar) findViewById(R.id.progress)).setMax(words.size() * 3);
         nextWord();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable(WORDS, (Serializable) words);
+        super.onSaveInstanceState(outState);
     }
 
     private void vibrate(Vibrator v) {v.vibrate(20);}

@@ -1,6 +1,8 @@
 package net.chmielowski.fiszki;
 
-class Word {
+import java.io.Serializable;
+
+class Word implements Serializable {
     final String english;
     final String foreign;
     int score = 0;
