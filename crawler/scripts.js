@@ -11,13 +11,14 @@ document.body.innerHTML += '<iframe id=verb></iframe>'
 var iframe = document.getElementById('verb');
 iframe.addEventListener("load", () => {
 	try {
-	words.push(verbAsString());
-	console.log(words.length);
+	    words.push(verbAsString());
+	    console.log(words.length);
 	} catch (error) {
 		console.log(error);
 	}
 	if (verbsStack.length === 0) {
 		document.body.innerHTML = words.join('<br>');
+        console.log((new Date().getTime() - start.getTime()) / 1000)
 		return;
 	}
 	iframe.src = verbsStack.pop();
@@ -28,6 +29,3 @@ words = []
 verbsStack = verbs();
 iframe.src = verbsStack.pop();
 
-document.innerHTML = words.join('#');
-var end = new Date();
-console.log((end.getTime() - start.getTime()) / 1000)
