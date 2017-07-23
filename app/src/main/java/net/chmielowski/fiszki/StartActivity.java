@@ -19,7 +19,6 @@ public class StartActivity extends AppCompatActivity {
             final Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             intent.putExtra(MainActivity.LANGUAGE, lang);
             startActivity(intent);
-            finish();
         });
     }
 

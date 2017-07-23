@@ -111,7 +111,7 @@ final class DictionaryUtils {
                         + "είμαι ,I am,είσαι ,you are,είναι ,he/she is,είμαστε ,we are,είστε ,you all are,είναι ,they are";
         switch (lang) {
             case ITALIAN:
-                return Arrays.asList(GREEK.split("\n"));
+                return Arrays.asList(ITALIAN.split("\n"));
             case GREEK:
                 return Arrays.asList(GREEK.split("\n"));
             default:

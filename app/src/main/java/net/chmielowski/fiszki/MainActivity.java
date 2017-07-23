@@ -19,13 +19,14 @@ public class MainActivity extends AppCompatActivity {
     public static final String LANGUAGE = "language";
     private Random random = new Random();
     private Word word;
-    private List<Word> words = DictionaryUtils.shuffled(
-            (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE));
+    private List<Word> words;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        words = DictionaryUtils.shuffled(
+                (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE));
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         findViewById(R.id.show).setOnClickListener(view -> {
             vibrate(v);
