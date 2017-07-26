@@ -5,9 +5,7 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -27,7 +25,6 @@ public class MainActivity extends AppCompatActivity {
     private Random random = new Random();
     private Word word;
     private List<Word> words;
-    private TextToSpeech speech;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +33,7 @@ public class MainActivity extends AppCompatActivity {
         Optional.ofNullable(savedInstanceState)
                 .map(state -> state.getSerializable(WORDS))
                 .executeIfPresent(w -> words = (List<Word>) w)
-                .executeIfAbsent(() -> words = DictionaryUtils.shuffled(
-                        (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE)));
+                .executeIfAbsent(() -> words = DictionaryUtils.shuffled(getLanguage()));
 
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         findViewById(R.id.show).setOnClickListener(view -> {
@@ -54,25 +50,27 @@ public class MainActivity extends AppCompatActivity {
         });
         ((ProgressBar) findViewById(R.id.progress)).setMax(words.size() * 3);
         nextWord();
-        findViewById(R.id.foreign).setOnClickListener(view -> {
+        findViewById(R.id.play).setOnClickListener(view -> {
+            vibrate(v);
             new Thread(() -> {
-                String Url = "https://translate.google.com/translate_tts?ie=UTF-8";
-                String pronouce = "&q=" + word.foreign.replace(" ", "");
-                String language = "&tl=" + "el";
-                String web = "&client=tw-ob";
-
-                String fullUrl = Url + pronouce + language + web;
-                Log.d("pchm", fullUrl);
-                MediaPlayer mediaPlayer = new MediaPlayer();
                 try {
-                    mediaPlayer.setDataSource(fullUrl);
-                    mediaPlayer.prepareAsync();
-                    mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+                    final MediaPlayer player = new MediaPlayer();
+                    player.setDataSource(String.format(
+                            "https://translate.google.com/translate_tts?ie=UTF-8&q=%s&tl=%s&client=tw-ob",
+                            word.foreign,
+                            getLanguage().shortcut
+                    ));
+                    player.prepareAsync();
+                    player.setOnPreparedListener(MediaPlayer::start);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }).start();
         });
+    }
+
+    private DictionaryUtils.Lang getLanguage() {
+        return (DictionaryUtils.Lang) getIntent().getSerializableExtra(LANGUAGE);
     }
 
     @Override
@@ -96,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.foreign).setVisibility(View.VISIBLE);
         enable(R.id.pass);
         enable(R.id.fail);
+        enable(R.id.play);
         disable(R.id.show);
     }
 
@@ -111,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.foreign).setVisibility(View.INVISIBLE);
         disable(R.id.pass);
         disable(R.id.fail);
+        disable(R.id.play);
         enable(R.id.show);
     }
 

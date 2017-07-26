@@ -139,12 +139,18 @@ final class DictionaryUtils {
             return IntStream.iterate(0, i -> i + 2).limit(words.length / 2)
                             .boxed()
                             .map(idx -> new Word(
-                                    extract(words[idx + 1]), extract(words[idx])));
+                                    extract(words[idx + 1]), extract(words[idx].replace(" ", ""))));
         };
     }
 
     enum Lang {
-        GREEK,
-        ITALIAN
+        GREEK("el"),
+        ITALIAN("it");
+
+        final String shortcut;
+
+        Lang(String shortcut) {
+            this.shortcut = shortcut;
+        }
     }
 }
