@@ -21,6 +21,7 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
 
     public static final String LANGUAGE = "language";
+    public static final String NUMBER_OF_WORDS = "number_of_words";
     private static final String WORDS = "words";
     private Random random = new Random();
     private Word word;
@@ -33,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         Optional.ofNullable(savedInstanceState)
                 .map(state -> state.getSerializable(WORDS))
                 .executeIfPresent(w -> words = (List<Word>) w)
-                .executeIfAbsent(() -> words = DictionaryUtils.shuffled(getLanguage()));
+                .executeIfAbsent(() -> words = DictionaryUtils.shuffled(getLanguage(), getNumberOfWords()));
 
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         findViewById(R.id.show).setOnClickListener(view -> {
@@ -67,6 +68,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }).start();
         });
+    }
+
+    private int getNumberOfWords() {
+        return getIntent().getIntExtra(NUMBER_OF_WORDS, 3);
     }
 
     private DictionaryUtils.Lang getLanguage() {

@@ -121,15 +121,15 @@ final class DictionaryUtils {
 
     private static String extract(String word) {return word.replace("\"", "");}
 
-    static List<Word> shuffled(Lang lang) {
+    static List<Word> shuffled(Lang lang, int numberOfWords) {
         final List<String> groups = groups(lang);
         Collections.shuffle(groups);
         final List<Word> words = Stream.of(groups)
-                                       .limit(3)
+                                       .limit(numberOfWords)
                                        .flatMap(splitter())
                                        .toList();
         Collections.shuffle(words);
-        return Stream.of(words).limit(20).toList();
+        return Stream.of(words).limit(17).toList();
     }
 
     @NonNull
