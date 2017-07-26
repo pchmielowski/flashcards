@@ -2,9 +2,12 @@ package net.chmielowski.fiszki;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -12,6 +15,7 @@ import android.widget.TextView;
 import com.annimon.stream.Optional;
 import com.annimon.stream.Stream;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
@@ -23,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private Random random = new Random();
     private Word word;
     private List<Word> words;
+    private TextToSpeech speech;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +54,25 @@ public class MainActivity extends AppCompatActivity {
         });
         ((ProgressBar) findViewById(R.id.progress)).setMax(words.size() * 3);
         nextWord();
+        findViewById(R.id.foreign).setOnClickListener(view -> {
+            new Thread(() -> {
+                String Url = "https://translate.google.com/translate_tts?ie=UTF-8";
+                String pronouce = "&q=" + word.foreign.replace(" ", "");
+                String language = "&tl=" + "el";
+                String web = "&client=tw-ob";
+
+                String fullUrl = Url + pronouce + language + web;
+                Log.d("pchm", fullUrl);
+                MediaPlayer mediaPlayer = new MediaPlayer();
+                try {
+                    mediaPlayer.setDataSource(fullUrl);
+                    mediaPlayer.prepareAsync();
+                    mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+        });
     }
 
     @Override
