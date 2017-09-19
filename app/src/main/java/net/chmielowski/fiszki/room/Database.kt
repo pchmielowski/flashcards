@@ -5,6 +5,6 @@ import android.arch.persistence.room.RoomDatabase
 
 @Database(entities = arrayOf(RoomWord::class), version = 1)
 abstract class WordDatabase : RoomDatabase() {
-    abstract fun wordDao(): WordDao
+    abstract fun dao(): WordDao
 }
 

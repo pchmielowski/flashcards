@@ -7,9 +7,9 @@ import android.arch.persistence.room.Query
 
 @Dao
 interface WordDao {
-    @Query("SELECT * FROM word WHERE word.value = :arg0")
+    @Query("SELECT * FROM word WHERE word.value = :value LIMIT 1")
     fun get(value: String): List<RoomWord>
 
     @Insert
-    fun insertAll(vararg users: RoomWord)
+    fun insert(word: RoomWord)
 }
