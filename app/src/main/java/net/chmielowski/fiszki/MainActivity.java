@@ -135,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
                                          .toList();
         if (unknown.size() == 0) {
             new RestService().send(basicWords);
+            new DataBaseService().save(basicWords);
             startActivity(new Intent(getApplicationContext(), StartActivity.class));
             finish();
             return;
