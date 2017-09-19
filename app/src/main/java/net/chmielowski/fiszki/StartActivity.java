@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 public class StartActivity extends AppCompatActivity {
 
-    private int numberOfWords;
+    private int numberOfWords = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
