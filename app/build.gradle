@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'realm-android'
 
 android {
     compileSdkVersion 26
@@ -37,9 +38,13 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 
-    implementation "android.arch.persistence.room:runtime:1.0.0-alpha9-1"
-    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha9-1"
+    def roomVersion = "1.0.0-alpha9-1"
+    implementation "android.arch.persistence.room:runtime:$roomVersion"
+    annotationProcessor "android.arch.persistence.room:compiler:$roomVersion"
 }
 repositories {
     mavenCentral()
+}
+realm {
+    syncEnabled = true
 }
