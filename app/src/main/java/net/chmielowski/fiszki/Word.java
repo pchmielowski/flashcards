@@ -1,11 +1,22 @@
 package net.chmielowski.fiszki;
 
 import java.io.Serializable;
+import java.util.UUID;
 
-class Word implements Serializable {
-    final String english;
-    final String foreign;
-    int score = 0;
+import io.realm.RealmObject;
+import io.realm.annotations.Ignore;
+import io.realm.annotations.PrimaryKey;
+
+public class Word extends RealmObject implements Serializable {
+    @PrimaryKey
+    String id = UUID.randomUUID().toString();
+    String foreign;
+    String english;
+    @Ignore
+    int score;
+
+    public Word() {
+    }
 
     Word(String english, String foreign) {
         this.english = english;

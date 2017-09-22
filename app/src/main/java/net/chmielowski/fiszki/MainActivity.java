@@ -40,9 +40,9 @@ public class MainActivity extends AppCompatActivity {
                     words = (List<Word>) w;
                 })
                 .executeIfAbsent(() -> {
-                    final Lesson lesson = DictionaryUtils.shuffled(getLanguage(), getNumberOfWords());
-                    basicWords = lesson.basicWords;
-                    words = lesson.words;
+                    final Lesson lesson = DictionaryUtils.getLesson(getLanguage(), getNumberOfWords());
+                    basicWords = lesson.getBaseWords();
+                    words = lesson.getAllWords();
                 });
 
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -135,7 +135,6 @@ public class MainActivity extends AppCompatActivity {
                                          .toList();
         if (unknown.size() == 0) {
             new RestService().send(basicWords);
-            new DataBaseService().save(basicWords);
             startActivity(new Intent(getApplicationContext(), StartActivity.class));
             finish();
             return;

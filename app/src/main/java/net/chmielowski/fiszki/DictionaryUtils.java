@@ -6,9 +6,12 @@ import com.annimon.stream.IntStream;
 import com.annimon.stream.Stream;
 import com.annimon.stream.function.Function;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import io.realm.Realm;
+import io.realm.RealmList;
 
 final class DictionaryUtils {
     private static List<String> groups(Lang lang) {
@@ -118,28 +121,43 @@ final class DictionaryUtils {
 
     private static String extract(String word) {return word.replace("\"", "");}
 
-    static Lesson shuffled(Lang lang, int numberOfWords) {
-        final List<String> groups = groups(lang);
-        Collections.shuffle(groups);
-        final List<String> choosen = Stream.of(groups).limit(numberOfWords).toList();
-        final List<Word> words = Stream.of(choosen)
-                                       .flatMap(splitter())
-                                       .toList();
-        final List<String> basicWords = Stream.of(choosen)
-                                              .map(group -> group.split(",")[0])
-                                              .toList();
-        Collections.shuffle(words);
-        return new Lesson(basicWords, Stream.of(words).limit(17).toList());
+    static Lesson getLesson(Lang lang, int numberOfWords) {
+
+        final List<String> rawGroups = groups(lang);
+        final List<WordGroup> wordGroups = Stream.of(rawGroups)
+                                                 .map(rawRowToWordGroup())
+                                                 .toList();
+
+        final List<WordGroup> chosen = new ArrayList<>();
+        try (Realm realm = Realm.getDefaultInstance()) {
+            realm.executeTransaction(db -> {
+                final boolean dbNotInitialized = db.where(WordGroup.class).findAll().size() == 0;
+                if (dbNotInitialized) {
+                    db.insert(new RealmList<>(wordGroups.toArray(new WordGroup[]{})));
+                }
+                Stream.of(db.where(WordGroup.class).findAll()
+                            .sort(WordGroup.SCORE))
+                      .limit(numberOfWords)
+                      .forEach(it -> {
+                          it.setScore(it.getScore() + 1);
+                          db.insertOrUpdate(it);
+                          chosen.add(db.copyFromRealm(it));
+                      });
+            });
+        }
+        return new Lesson(Stream.of(chosen).limit(17).toList());
     }
 
     @NonNull
-    private static Function<String, Stream<? extends Word>> splitter() {
+    private static Function<String, WordGroup> rawRowToWordGroup() {
         return row -> {
             final String[] words = row.split(",");
-            return IntStream.iterate(0, i -> i + 2).limit(words.length / 2)
-                            .boxed()
-                            .map(idx -> new Word(
-                                    extract(words[idx + 1]), extract(words[idx].replace(" ", ""))));
+            final List<Word> list = IntStream.iterate(0, i -> i + 2).limit(words.length / 2)
+                                             .boxed()
+                                             .map(idx -> new Word(
+                                                     extract(words[idx + 1]), extract(words[idx].replace(" ", ""))))
+                                             .toList();
+            return new WordGroup(new RealmList<>(list.toArray(new Word[]{})));
         };
     }
 
