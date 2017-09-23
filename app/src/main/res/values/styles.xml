@@ -19,7 +19,6 @@
 
     <style name="Language">
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:paddingStart">20dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:textSize">18sp</item>
     </style>

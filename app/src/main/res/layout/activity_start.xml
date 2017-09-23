@@ -12,24 +12,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="net.chmielowski.fiszki.StartActivity">
 
-    <LinearLayout
-        android:id="@+id/start_lesson"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/new_lesson"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start lesson"
-            android:textSize="24sp"/>
-    </LinearLayout>
-
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -40,7 +22,7 @@
             style="@style/Language"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Number of words: "/>
+            android:text="Choose number of verbs: "/>
 
         <TextView
             android:id="@+id/numberOfWordsText"
@@ -56,5 +38,25 @@
         android:layout_height="wrap_content"
         android:max="6"
         android:progress="3"/>
+
+    <LinearLayout
+        android:id="@+id/start_lesson"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:src="@drawable/new_lesson"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start lesson"
+            android:textSize="24sp"/>
+    </LinearLayout>
 
 </LinearLayout>
