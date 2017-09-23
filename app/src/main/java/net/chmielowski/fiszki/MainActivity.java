@@ -23,11 +23,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String LANGUAGE = "language";
     public static final String NUMBER_OF_WORDS = "number_of_words";
     private static final String WORDS = "words";
-    private static final String BASIC_WORDS = "basic_words";
     private Random random = new Random();
     private Word word;
     private List<Word> words;
-    private List<String> basicWords;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +33,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Optional.ofNullable(savedInstanceState)
                 .map(state -> state.getSerializable(WORDS))
-                .executeIfPresent(w -> {
-                    basicWords = (List<String>) savedInstanceState.getSerializable(BASIC_WORDS);
-                    words = (List<Word>) w;
-                })
+                .executeIfPresent(w -> words = (List<Word>) w)
                 .executeIfAbsent(() -> {
                     final Lesson lesson = DictionaryUtils.getLesson(getLanguage(), getNumberOfWords());
-                    basicWords = lesson.getBaseWords();
                     words = lesson.getAllWords();
                 });
 
@@ -89,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putSerializable(BASIC_WORDS, (Serializable) basicWords);
         outState.putSerializable(WORDS, (Serializable) words);
         super.onSaveInstanceState(outState);
     }
@@ -134,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
                                          .filter(word -> word.score < 3)
                                          .toList();
         if (unknown.size() == 0) {
-            new RestService().send(basicWords);
             startActivity(new Intent(getApplicationContext(), StartActivity.class));
             finish();
             return;
