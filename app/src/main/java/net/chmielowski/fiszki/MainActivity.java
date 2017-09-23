@@ -34,14 +34,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         realmDelegate.onCreate();
         Optional.ofNullable(savedInstanceState)
-                .map(state -> state.getSerializable(LESSON_ID))
-                .executeIfPresent(lessonId -> {
-                    // get lesson from DB and save to MainActivity.this.lesson
-                })
-                .executeIfAbsent(() -> {
-                    lesson = DictionaryUtils.getLesson(
-                            getLanguage(), getNumberOfWords(), realmDelegate.getRealm());
-                });
+                .map(state -> state.getString(LESSON_ID))
+                .executeIfPresent(lessonId -> lesson =
+                        realmDelegate.getRealm()
+                                     .where(Lesson.class)
+                                     .equalTo("id", lessonId)
+                                     .findFirst())
+                .executeIfAbsent(() -> lesson =
+                        DictionaryUtils.getLesson(
+                                getLanguage(),
+                                getNumberOfWords(),
+                                realmDelegate.getRealm()
+                        ));
 
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         findViewById(R.id.show).setOnClickListener(view -> {
