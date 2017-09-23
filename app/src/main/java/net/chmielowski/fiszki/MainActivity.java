@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String NUMBER_OF_WORDS = "number_of_words";
     private static final String LESSON_ID = "LESSON_ID";
     private final int NUMBER_OF_REPETITIONS = 3;
+    private final MyView myView = new MyView();
     private Random random = new Random();
     private Word word;
     private RealmDelegate realmDelegate = new RealmDelegate();
@@ -40,13 +41,12 @@ public class MainActivity extends AppCompatActivity {
                 .executeIfAbsent(() -> {
                     lesson = DictionaryUtils.getLesson(
                             getLanguage(), getNumberOfWords(), realmDelegate.getRealm());
-//                    words = Collections.unmodifiableList(lesson.getGroups());
                 });
 
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         findViewById(R.id.show).setOnClickListener(view -> {
             vibrate(v);
-            showAnswer();
+            myView.showAnswer(this);
         });
         findViewById(R.id.pass).setOnClickListener(view -> {
             vibrate(v);
@@ -110,28 +110,13 @@ public class MainActivity extends AppCompatActivity {
         nextWord();
     }
 
-    private void showAnswer() {
-        findViewById(R.id.foreign).setVisibility(View.VISIBLE);
-        enable(R.id.pass);
-        enable(R.id.fail);
-        enable(R.id.play);
-        disable(R.id.show);
-    }
-
     private Integer score() {
         return lesson.score();
     }
 
     private void nextWord() {
-        updateProgressBar();
         chooseNext();
-        ((TextView) findViewById(R.id.english)).setText(word.english);
-        ((TextView) findViewById(R.id.foreign)).setText(word.foreign);
-        findViewById(R.id.foreign).setVisibility(View.INVISIBLE);
-        disable(R.id.pass);
-        disable(R.id.fail);
-        disable(R.id.play);
-        enable(R.id.show);
+        myView.refreshView(this);
     }
 
     private void chooseNext() {
@@ -150,18 +135,39 @@ public class MainActivity extends AppCompatActivity {
         word = unknown.get(random.nextInt(unknown.size()));
     }
 
-    private void updateProgressBar() {
-        ((ProgressBar) findViewById(R.id.progress)).setProgress(score());
-    }
+    private class MyView {
 
-    private void enable(int view) {
-        findViewById(view).setEnabled(true);
-        findViewById(view).setAlpha(1f);
-    }
+        private void disable(int view, MainActivity mainActivity) {
+            mainActivity.findViewById(view).setAlpha(.2f);
+            mainActivity.findViewById(view).setEnabled(false);
+        }
 
-    private void disable(int view) {
-        findViewById(view).setAlpha(.2f);
-        findViewById(view).setEnabled(false);
-    }
+        private void enable(int view, MainActivity mainActivity) {
+            mainActivity.findViewById(view).setEnabled(true);
+            mainActivity.findViewById(view).setAlpha(1f);
+        }
 
+        private void updateProgressBar(MainActivity mainActivity) {
+            ((ProgressBar) mainActivity.findViewById(R.id.progress)).setProgress(mainActivity.score());
+        }
+
+        private void refreshView(MainActivity mainActivity) {
+            updateProgressBar(mainActivity);
+            ((TextView) mainActivity.findViewById(R.id.english)).setText(mainActivity.word.english);
+            ((TextView) mainActivity.findViewById(R.id.foreign)).setText(mainActivity.word.foreign);
+            mainActivity.findViewById(R.id.foreign).setVisibility(View.INVISIBLE);
+            disable(R.id.pass, mainActivity);
+            disable(R.id.fail, mainActivity);
+            disable(R.id.play, mainActivity);
+            enable(R.id.show, mainActivity);
+        }
+
+        private void showAnswer(MainActivity mainActivity) {
+            mainActivity.findViewById(R.id.foreign).setVisibility(View.VISIBLE);
+            enable(R.id.pass, mainActivity);
+            enable(R.id.fail, mainActivity);
+            enable(R.id.play, mainActivity);
+            disable(R.id.show, mainActivity);
+        }
+    }
 }
