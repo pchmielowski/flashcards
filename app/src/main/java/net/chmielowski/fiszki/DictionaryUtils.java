@@ -5,9 +5,7 @@ import android.support.annotation.NonNull;
 import com.annimon.stream.IntStream;
 import com.annimon.stream.Stream;
 import com.annimon.stream.function.Function;
-import com.annimon.stream.function.Supplier;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -122,8 +120,8 @@ final class DictionaryUtils {
 
     private static String extract(String word) {return word.replace("\"", "");}
 
-    static Lesson getLesson(Lang lang, int numberOfWords) {
-        return new LessonFactory(numberOfWords).invoke(groups(lang), () -> Realm.getDefaultInstance());
+    static Lesson getLesson(Lang lang, int numberOfWords, Realm realm) {
+        return new LessonFactory(numberOfWords).invoke(groups(lang), realm);
     }
 
     @NonNull
@@ -157,36 +155,29 @@ final class DictionaryUtils {
             this.numberOfWords = numberOfWords;
         }
 
-        Lesson invoke(List<String> rawGroups, Supplier<Realm> realmFactory) {
+        Lesson invoke(List<String> rawGroups, Realm realm) {
             final List<WordGroup> wordGroups = Stream.of(rawGroups)
                                                      .map(rawRowToWordGroup())
                                                      .toList();
-            return new Lesson(Stream.of(withLowestScore(wordGroups, realmFactory))
-                                    .limit(17)
-                                    .toList());
+            final Lesson lesson = new Lesson(Stream.of(withLowestScore(wordGroups, realm))
+                                                   .limit(2)
+                                                   .toList());
+            realm.beginTransaction();
+            final Lesson managed = realm.copyToRealm(lesson);
+            realm.commitTransaction();
+            return managed;
         }
 
         @NonNull
-        private List<WordGroup> withLowestScore(List<WordGroup> wordGroups, Supplier<Realm> realmFactory) {
-            final List<WordGroup> chosen = new ArrayList<>();
-            try (Realm realm = realmFactory.get()) {
-                realm.executeTransaction(db -> {
-                    final boolean dbNotInitialized = db.where(WordGroup.class).findAll().size() == 0;
-                    if (dbNotInitialized) {
-                        db.insert(new RealmList<>(wordGroups.toArray(new WordGroup[]{})));
-                    }
-                    Stream.of(db.where(WordGroup.class)
-                                .findAll()
-                                .sort(WordGroup.SCORE))
-                          .limit(numberOfWords)
-                          .forEach(it -> {
-                              it.score = it.score + 1;
-                              db.insertOrUpdate(it);
-                              chosen.add(db.copyFromRealm(it));
-                          });
-                });
-            }
-            return chosen;
+        private List<WordGroup> withLowestScore(List<WordGroup> wordGroups, Realm realm) {
+            realm.executeTransaction(db -> {
+                final boolean dbNotInitialized = db.where(WordGroup.class).count() == 0;
+                if (dbNotInitialized) {
+                    db.insert(new RealmList<>(wordGroups.toArray(new WordGroup[]{})));
+                }
+            });
+            return realm.where(WordGroup.class)
+                        .findAllSorted(WordGroup.SCORE);
         }
     }
 }

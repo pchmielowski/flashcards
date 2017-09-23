@@ -8,32 +8,30 @@ import android.support.v7.widget.RecyclerView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import io.realm.Realm;
-
 public class StartActivity extends AppCompatActivity {
 
     private int numberOfWords = 3;
-    private Realm realm;
+    private RealmDelegate realmDelegate = new RealmDelegate();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        realmDelegate.onCreate();
         setContentView(R.layout.activity_start);
         setLanguage(R.id.greek, DictionaryUtils.Lang.GREEK);
         setLanguage(R.id.italian, DictionaryUtils.Lang.ITALIAN);
-        showMyWords(((RecyclerView) findViewById(R.id.words)), this);
+        showMyWords(findViewById(R.id.words), this);
     }
 
     private void showMyWords(RecyclerView view, StartActivity context) {
         view.setLayoutManager(new LinearLayoutManager(context));
-        realm = Realm.getDefaultInstance();
-        view.setAdapter(new WordsAdapter(realm));
+        view.setAdapter(new WordsAdapter(realmDelegate.getRealm()));
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        realm.close();
+        realmDelegate.onDestroy();
     }
 
     private void setLanguage(int button, DictionaryUtils.Lang lang) {

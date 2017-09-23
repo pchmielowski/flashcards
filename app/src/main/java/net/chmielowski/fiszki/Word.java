@@ -1,19 +1,14 @@
 package net.chmielowski.fiszki;
 
+import android.annotation.SuppressLint;
+
 import java.io.Serializable;
-import java.util.UUID;
 
 import io.realm.RealmObject;
-import io.realm.annotations.Ignore;
-import io.realm.annotations.PrimaryKey;
 
 public class Word extends RealmObject implements Serializable {
-    @PrimaryKey
-    String id = UUID.randomUUID().toString();
     String foreign;
     String english;
-    @Ignore
-    int score;
 
     public Word() {
     }
@@ -23,12 +18,9 @@ public class Word extends RealmObject implements Serializable {
         this.foreign = foreign;
     }
 
+    @SuppressLint("DefaultLocale")
     @Override
     public String toString() {
-        return "Word{" +
-                "english='" + english + '\'' +
-                ", foreign='" + foreign + '\'' +
-                ", score=" + score +
-                '}';
+        return String.format("Word{english='%s', foreign='%s'}", english, foreign);
     }
 }

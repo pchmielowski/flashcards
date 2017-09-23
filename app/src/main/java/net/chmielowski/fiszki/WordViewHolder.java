@@ -10,7 +10,7 @@ class WordViewHolder extends RecyclerView.ViewHolder {
     }
 
     void bind(WordGroup group) {
-        bindField(R.id.word, group.base.foreign);
+        bindField(R.id.word, group.words.first().foreign);
         bindField(R.id.score, String.valueOf(group.score));
     }
 

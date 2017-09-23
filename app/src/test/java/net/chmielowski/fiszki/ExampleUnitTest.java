@@ -13,6 +13,6 @@ public class ExampleUnitTest {
 
     @Test
     public void addition_isCorrect() throws Exception {
-        Stream.of(DictionaryUtils.getLesson(DictionaryUtils.Lang.GREEK, 3)).forEach(System.out::println);
+        Stream.of(DictionaryUtils.getLesson(DictionaryUtils.Lang.GREEK, 3, realm)).forEach(System.out::println);
     }
 }

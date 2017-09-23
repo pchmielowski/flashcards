@@ -1,7 +1,6 @@
 package net.chmielowski.fiszki;
 
 import android.content.Context;
-import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -14,7 +13,6 @@ import com.annimon.stream.Optional;
 import com.annimon.stream.Stream;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
 
@@ -22,21 +20,27 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String LANGUAGE = "language";
     public static final String NUMBER_OF_WORDS = "number_of_words";
-    private static final String WORDS = "words";
+    private static final String LESSON_ID = "LESSON_ID";
+    private final int NUMBER_OF_REPETITIONS = 3;
     private Random random = new Random();
     private Word word;
-    private List<Word> words;
+    private RealmDelegate realmDelegate = new RealmDelegate();
+    private Lesson lesson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        realmDelegate.onCreate();
         Optional.ofNullable(savedInstanceState)
-                .map(state -> state.getSerializable(WORDS))
-                .executeIfPresent(w -> words = (List<Word>) w)
+                .map(state -> state.getSerializable(LESSON_ID))
+                .executeIfPresent(lessonId -> {
+                    // get lesson from DB and save to MainActivity.this.lesson
+                })
                 .executeIfAbsent(() -> {
-                    final Lesson lesson = DictionaryUtils.getLesson(getLanguage(), getNumberOfWords());
-                    words = lesson.getAllWords();
+                    lesson = DictionaryUtils.getLesson(
+                            getLanguage(), getNumberOfWords(), realmDelegate.getRealm());
+//                    words = Collections.unmodifiableList(lesson.getGroups());
                 });
 
         final Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -52,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             vibrate(v);
             onFail();
         });
-        ((ProgressBar) findViewById(R.id.progress)).setMax(words.size() * 3);
+        ((ProgressBar) findViewById(R.id.progress)).setMax(lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS);
         nextWord();
         findViewById(R.id.play).setOnClickListener(view -> {
             vibrate(v);
@@ -74,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int getNumberOfWords() {
-        return getIntent().getIntExtra(NUMBER_OF_WORDS, 3);
+        return getIntent().getIntExtra(NUMBER_OF_WORDS, NUMBER_OF_REPETITIONS);
     }
 
     private DictionaryUtils.Lang getLanguage() {
@@ -83,8 +87,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putSerializable(WORDS, (Serializable) words);
+        outState.putString(LESSON_ID, lesson.id);
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        realmDelegate.onDestroy();
     }
 
     private void vibrate(Vibrator v) {v.vibrate(20);}
@@ -94,7 +104,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onPass() {
-        word.score += 1;
+        realmDelegate.getRealm()
+                     .executeTransaction(db -> lesson.incrementScoreOf(word)
+                     );
         nextWord();
     }
 
@@ -107,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Integer score() {
-        return Stream.of(words).map(w -> w.score).reduce((a, b) -> a + b).get();
+        return lesson.score();
     }
 
     private void nextWord() {
@@ -123,11 +135,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void chooseNext() {
-        final List<Word> unknown = Stream.of(this.words)
-                                         .filter(word -> word.score < 3)
+        final List<Word> unknown = Stream.of(lesson.scores)
+                                         .filter(score -> score.getScore() < NUMBER_OF_REPETITIONS)
+                                         .map(score -> score.word)
                                          .toList();
-        if (unknown.size() == 0) {
-            startActivity(new Intent(getApplicationContext(), StartActivity.class));
+        final boolean finished = unknown.size() == 0;
+        if (finished) {
+            realmDelegate.getRealm()
+                         .executeTransaction(db -> Stream.of(lesson.groups)
+                                                         .forEach(w -> w.score++));
             finish();
             return;
         }
