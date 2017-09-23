@@ -64,12 +64,13 @@ public class MainActivity extends AppCompatActivity {
         nextWord();
         findViewById(R.id.play).setOnClickListener(view -> {
             vibrate(v);
+            final String wordToTranslate = word.foreign;
             new Thread(() -> {
                 try {
                     final MediaPlayer player = new MediaPlayer();
                     player.setDataSource(String.format(
                             "https://translate.google.com/translate_tts?ie=UTF-8&q=%s&tl=%s&client=tw-ob",
-                            word.foreign,
+                            wordToTranslate,
                             getLanguage().shortcut
                     ));
                     player.prepareAsync();
