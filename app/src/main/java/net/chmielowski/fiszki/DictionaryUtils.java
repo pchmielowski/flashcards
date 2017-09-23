@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import com.annimon.stream.IntStream;
 import com.annimon.stream.Stream;
 import com.annimon.stream.function.Function;
+import com.annimon.stream.function.Supplier;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,30 +123,7 @@ final class DictionaryUtils {
     private static String extract(String word) {return word.replace("\"", "");}
 
     static Lesson getLesson(Lang lang, int numberOfWords) {
-
-        final List<String> rawGroups = groups(lang);
-        final List<WordGroup> wordGroups = Stream.of(rawGroups)
-                                                 .map(rawRowToWordGroup())
-                                                 .toList();
-
-        final List<WordGroup> chosen = new ArrayList<>();
-        try (Realm realm = Realm.getDefaultInstance()) {
-            realm.executeTransaction(db -> {
-                final boolean dbNotInitialized = db.where(WordGroup.class).findAll().size() == 0;
-                if (dbNotInitialized) {
-                    db.insert(new RealmList<>(wordGroups.toArray(new WordGroup[]{})));
-                }
-                Stream.of(db.where(WordGroup.class).findAll()
-                            .sort(WordGroup.SCORE))
-                      .limit(numberOfWords)
-                      .forEach(it -> {
-                          it.setScore(it.getScore() + 1);
-                          db.insertOrUpdate(it);
-                          chosen.add(db.copyFromRealm(it));
-                      });
-            });
-        }
-        return new Lesson(Stream.of(chosen).limit(17).toList());
+        return new LessonFactory(numberOfWords).invoke(groups(lang), () -> Realm.getDefaultInstance());
     }
 
     @NonNull
@@ -169,6 +147,46 @@ final class DictionaryUtils {
 
         Lang(String shortcut) {
             this.shortcut = shortcut;
+        }
+    }
+
+    static class LessonFactory {
+        private int numberOfWords;
+
+        LessonFactory(int numberOfWords) {
+            this.numberOfWords = numberOfWords;
+        }
+
+        Lesson invoke(List<String> rawGroups, Supplier<Realm> realmFactory) {
+            final List<WordGroup> wordGroups = Stream.of(rawGroups)
+                                                     .map(rawRowToWordGroup())
+                                                     .toList();
+            return new Lesson(Stream.of(withLowestScore(wordGroups, realmFactory))
+                                    .limit(17)
+                                    .toList());
+        }
+
+        @NonNull
+        private List<WordGroup> withLowestScore(List<WordGroup> wordGroups, Supplier<Realm> realmFactory) {
+            final List<WordGroup> chosen = new ArrayList<>();
+            try (Realm realm = realmFactory.get()) {
+                realm.executeTransaction(db -> {
+                    final boolean dbNotInitialized = db.where(WordGroup.class).findAll().size() == 0;
+                    if (dbNotInitialized) {
+                        db.insert(new RealmList<>(wordGroups.toArray(new WordGroup[]{})));
+                    }
+                    Stream.of(db.where(WordGroup.class)
+                                .findAll()
+                                .sort(WordGroup.SCORE))
+                          .limit(numberOfWords)
+                          .forEach(it -> {
+                              it.setScore(it.getScore() + 1);
+                              db.insertOrUpdate(it);
+                              chosen.add(db.copyFromRealm(it));
+                          });
+                });
+            }
+            return chosen;
         }
     }
 }
