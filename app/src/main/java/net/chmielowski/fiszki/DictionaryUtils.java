@@ -160,7 +160,7 @@ final class DictionaryUtils {
                                                      .map(rawRowToWordGroup())
                                                      .toList();
             final Lesson lesson = new Lesson(Stream.of(withLowestScore(wordGroups, realm))
-                                                   .limit(2)
+                                                   .limit(numberOfWords)
                                                    .toList());
             realm.beginTransaction();
             final Lesson managed = realm.copyToRealm(lesson);

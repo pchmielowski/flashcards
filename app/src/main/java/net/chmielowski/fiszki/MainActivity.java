@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String LANGUAGE = "language";
     public static final String NUMBER_OF_WORDS = "number_of_words";
     private static final String LESSON_ID = "LESSON_ID";
-    private final int NUMBER_OF_REPETITIONS = 3;
+    private final int NUMBER_OF_REPETITIONS = 2;
     private final MyView myView = new MyView();
     private Random random = new Random();
     private Word word;
@@ -119,11 +119,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void nextWord() {
-        chooseNext();
-        myView.refreshView(this);
+        chooseNext(() -> myView.refreshView(MainActivity.this));
     }
 
-    private void chooseNext() {
+    private void chooseNext(Runnable runnable) {
         final List<Word> unknown = Stream.of(lesson.scores)
                                          .filter(score -> score.getScore() < NUMBER_OF_REPETITIONS)
                                          .map(score -> score.word)
@@ -131,12 +130,17 @@ public class MainActivity extends AppCompatActivity {
         final boolean finished = unknown.size() == 0;
         if (finished) {
             realmDelegate.getRealm()
-                         .executeTransaction(db -> Stream.of(lesson.groups)
-                                                         .forEach(w -> w.score++));
+                         .executeTransaction(db -> {
+                             Stream.of(lesson.groups)
+                                   .forEach(w -> w.score++);
+                             db.delete(Lesson.class);
+                             db.delete(WordScore.class);
+                         });
             finish();
             return;
         }
         word = unknown.get(random.nextInt(unknown.size()));
+        runnable.run();
     }
 
     private class MyView {
