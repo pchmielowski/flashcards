@@ -3,8 +3,6 @@ package net.chmielowski.fiszki
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.SeekBar
 import android.widget.TextView
@@ -20,12 +18,6 @@ class StartActivity : AppCompatActivity() {
         setContentView(R.layout.activity_start)
         setLanguage(R.id.greek, DictionaryUtils.Lang.GREEK)
         setLanguage(R.id.italian, DictionaryUtils.Lang.ITALIAN)
-        showMyWords(findViewById<RecyclerView>(R.id.words), this)
-    }
-
-    private fun showMyWords(view: RecyclerView, context: StartActivity) {
-        view.layoutManager = LinearLayoutManager(context)
-        view.adapter = WordsAdapter(realmDelegate.realm)
     }
 
     override fun onDestroy() {
