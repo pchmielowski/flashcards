@@ -16,8 +16,7 @@ class StartActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         realmDelegate.onCreate()
         setContentView(R.layout.activity_start)
-        setLanguage(R.id.greek, DictionaryUtils.Lang.GREEK)
-        setLanguage(R.id.italian, DictionaryUtils.Lang.ITALIAN)
+        setUp(R.id.start_lesson, DictionaryUtils.Lang.ITALIAN)
     }
 
     override fun onDestroy() {
@@ -25,7 +24,7 @@ class StartActivity : AppCompatActivity() {
         realmDelegate.onDestroy()
     }
 
-    private fun setLanguage(button: Int, lang: DictionaryUtils.Lang) {
+    private fun setUp(button: Int, lang: DictionaryUtils.Lang) {
         findViewById<View>(button).setOnClickListener {
             val intent = Intent(applicationContext, MainActivity::class.java)
             intent.putExtra(MainActivity.LANGUAGE, lang)
