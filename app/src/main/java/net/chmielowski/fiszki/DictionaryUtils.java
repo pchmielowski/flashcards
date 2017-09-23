@@ -180,7 +180,7 @@ final class DictionaryUtils {
                                 .sort(WordGroup.SCORE))
                           .limit(numberOfWords)
                           .forEach(it -> {
-                              it.setScore(it.getScore() + 1);
+                              it.score = it.score + 1;
                               db.insertOrUpdate(it);
                               chosen.add(db.copyFromRealm(it));
                           });
