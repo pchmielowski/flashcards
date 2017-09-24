@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import java.util.*
+import javax.inject.Inject
 
 
 class MainActivity : AppCompatActivity() {
@@ -16,7 +17,8 @@ class MainActivity : AppCompatActivity() {
     private val myView = MyView(this)
     private val random = Random()
     private lateinit var word: Word
-    private val realmDelegate = RealmDelegate()
+    @Inject
+    internal lateinit var realmDelegate: RealmDelegate
     private lateinit var lesson: Lesson
 
     override fun onCreate(savedInstanceState: Bundle?) {
