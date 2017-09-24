@@ -6,11 +6,11 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Vibrator
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import io.reactivex.Observable
+import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
@@ -20,15 +20,16 @@ class MainActivity : AppCompatActivity() {
     internal lateinit var realmDelegate: RealmDelegate
     internal lateinit var game: Game
 
+    private lateinit var disposable: Disposable
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         RoomService().saveData(applicationContext)
         setContentView(R.layout.activity_main)
         realmDelegate.onCreate()
-        game.nextWordObservable()
+        disposable = game.nextWordObservable()
                 .subscribe({
                     myView.refreshView()
-                    Log.i("pchm", it as String)
                 }, {
                     throw RuntimeException(it)
                 }, {
@@ -45,14 +46,13 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.pass).setOnClickListener {
             vibrate(v)
-            game.onPass()
+            game.onIncorrectAnswer()
         }
         findViewById<View>(R.id.fail).setOnClickListener {
             vibrate(v)
-            game.onFail()
+            game.onCorrectAnswer()
         }
         findViewById<ProgressBar>(R.id.progress).max = game.lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS
-        game.nextWord()
         findViewById<View>(R.id.play).setOnClickListener {
             vibrate(v)
             play(game.word.foreign, intent.language().shortcut)
@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         realmDelegate.onDestroy()
+        disposable.dispose()
     }
 
     private fun vibrate(v: Vibrator) {
@@ -126,12 +127,12 @@ class MainActivity : AppCompatActivity() {
 }
 
 class Game internal constructor(val realm: RealmDelegate) {
-    internal fun persistedLesson(id: String) = realm.realm
+    private fun persistedLesson(id: String) = realm.realm
             .where(Lesson::class.java)
             .equalTo("id", id)
             .findFirst()
 
-    internal fun newLesson(language: DictionaryUtils.Lang, numberOfWords: Int) =
+    private fun newLesson(language: DictionaryUtils.Lang, numberOfWords: Int) =
             DictionaryUtils.getLesson(
                     language,
                     numberOfWords,
@@ -140,23 +141,17 @@ class Game internal constructor(val realm: RealmDelegate) {
     internal lateinit var lesson: Lesson
     internal lateinit var word: Word
 
-    fun incrementScoreOfCurrentWord() {
+    private fun incrementScoreOfCurrentWord() {
         realm.realm
                 .executeTransaction { lesson.incrementScoreOf(word) }
 
     }
 
-    internal fun restoreOrCreateLesson(savedId: String?, language: DictionaryUtils.Lang, numberOfWords: Int) {
-        lesson = savedId
-                ?.let {
-                    persistedLesson(it)
-                }
-                ?: newLesson(language, numberOfWords)
-    }
-
     private val random = Random()
 
-    internal fun chooseNext() {
+    private val subject: PublishSubject<Any> = PublishSubject.create<Any>()
+
+    private fun chooseNext() {
         val notPracticedYet = lesson.scores
                 .filter { it.score < MainActivity.NUMBER_OF_REPETITIONS }
                 .map { it.word }
@@ -175,22 +170,25 @@ class Game internal constructor(val realm: RealmDelegate) {
         subject.onNext("hello")
     }
 
-    internal fun onFail() {
-        nextWord()
-    }
-
-    internal fun onPass() {
-        incrementScoreOfCurrentWord()
-        nextWord()
-    }
-
-    internal fun nextWord() {
+    internal fun restoreOrCreateLesson(savedId: String?, language: DictionaryUtils.Lang, numberOfWords: Int) {
+        lesson = savedId
+                ?.let {
+                    persistedLesson(it)
+                }
+                ?: newLesson(language, numberOfWords)
         chooseNext()
     }
 
-    private val subject: PublishSubject<Any> = PublishSubject.create<Any>()
+    internal fun onCorrectAnswer() {
+        chooseNext()
+    }
 
-    fun nextWordObservable(): Observable<Any> = subject
+    internal fun onIncorrectAnswer() {
+        incrementScoreOfCurrentWord()
+        chooseNext()
+    }
+
+    internal fun nextWordObservable(): Observable<Any> = subject
 }
 
 fun play(word: String, language: String) {
