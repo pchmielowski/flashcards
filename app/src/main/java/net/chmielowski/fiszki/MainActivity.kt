@@ -8,8 +8,8 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
-import java.io.IOException
 import java.util.*
+
 
 class MainActivity : AppCompatActivity() {
     private val NUMBER_OF_REPETITIONS = 2
@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        RoomService().saveData(applicationContext)
         setContentView(R.layout.activity_main)
         realmDelegate.onCreate()
         lesson = savedInstanceState
@@ -48,27 +49,14 @@ class MainActivity : AppCompatActivity() {
             vibrate(v)
             onFail()
         }
-        (findViewById<View>(R.id.progress) as ProgressBar).max = lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS
+        findViewById<ProgressBar>(R.id.progress).max = lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS
         nextWord()
         findViewById<View>(R.id.play).setOnClickListener {
             vibrate(v)
-            val wordToTranslate = word.foreign
-            Thread {
-                try {
-                    val player = MediaPlayer()
-                    player.setDataSource(String.format(
-                            "https://translate.google.com/translate_tts?ie=UTF-8&q=%s&tl=%s&client=tw-ob",
-                            wordToTranslate,
-                            language.shortcut
-                    ))
-                    player.prepareAsync()
-                    player.setOnPreparedListener({ it.start() })
-                } catch (e: IOException) {
-                    throw RuntimeException(e)
-                }
-            }.start()
+            play(word.foreign, language.shortcut)
         }
     }
+
 
     private val numberOfWords: Int
         get() = intent.getIntExtra(NUMBER_OF_WORDS, NUMBER_OF_REPETITIONS)
@@ -101,15 +89,13 @@ class MainActivity : AppCompatActivity() {
         nextWord()
     }
 
-    private fun score(): Int {
-        return lesson.score()
-    }
+    private fun score() = lesson.score()
 
     private fun nextWord() {
-        chooseNext(Runnable { myView.refreshView() })
+        chooseNext(andThen = Runnable { myView.refreshView() })
     }
 
-    private fun chooseNext(runnable: Runnable) {
+    private fun chooseNext(andThen: Runnable) {
         val unknown = lesson.scores
                 .filter { it.score < NUMBER_OF_REPETITIONS }
                 .map { it.word }
@@ -126,7 +112,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         word = unknown[random.nextInt(unknown.size)]
-        runnable.run()
+        andThen.run()
     }
 
     private class MyView internal constructor(private val activity: MainActivity) {
@@ -166,10 +152,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-
         val LANGUAGE = "language"
         val NUMBER_OF_WORDS = "number_of_words"
         private val LESSON_ID = "LESSON_ID"
     }
 }
 
+fun play(word: String, language: String) {
+    Thread {
+        with(MediaPlayer()) {
+            setDataSource(String.format(
+                    "https://translate.google.com/translate_tts?ie=UTF-8&q=%s&tl=%s&client=tw-ob",
+                    word,
+                    language
+            ))
+            prepareAsync()
+            setOnPreparedListener { it.start() }
+        }
+    }.start()
+}
