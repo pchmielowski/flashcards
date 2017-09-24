@@ -17,8 +17,10 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private val myView = MyView(this)
-    internal lateinit var realmDelegate: RealmDelegate
-    internal lateinit var game: Game
+
+    private lateinit var realmDelegate: RealmDelegate
+
+    private lateinit var game: Game
 
     private lateinit var disposable: Disposable
 
@@ -29,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         realmDelegate.onCreate()
         disposable = game.nextWordObservable()
                 .subscribe({
-                    myView.refreshView()
+                    myView.refreshView(it.english, it.foreign, it.score)
                 }, {
                     throw RuntimeException(it)
                 }, {
@@ -52,10 +54,10 @@ class MainActivity : AppCompatActivity() {
             vibrate(v)
             game.onCorrectAnswer()
         }
-        findViewById<ProgressBar>(R.id.progress).max = game.lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS
+        findViewById<ProgressBar>(R.id.progress).max = game.maxProgress()
         findViewById<View>(R.id.play).setOnClickListener {
             vibrate(v)
-            play(game.word.foreign, intent.language().shortcut)
+            game.playCurrentWord(intent.language().shortcut)
         }
     }
 
@@ -66,7 +68,7 @@ class MainActivity : AppCompatActivity() {
     private fun Intent.language() = this.getSerializableExtra(LANGUAGE) as DictionaryUtils.Lang
 
     override fun onSaveInstanceState(outState: Bundle?) {
-        outState!!.putString(LESSON_ID, game.lesson.id)
+        outState!!.putString(LESSON_ID, game.lessonId())
         super.onSaveInstanceState(outState)
     }
 
@@ -81,7 +83,6 @@ class MainActivity : AppCompatActivity() {
         v.vibrate(20)
     }
 
-
     private class MyView internal constructor(private val activity: MainActivity) {
 
         private fun disable(view: Int) {
@@ -94,14 +95,14 @@ class MainActivity : AppCompatActivity() {
             this.activity.findViewById<View>(view).alpha = 1f
         }
 
-        private fun updateProgressBar() {
-            (this.activity.findViewById<View>(R.id.progress) as ProgressBar).progress = this.activity.game.lesson.score()
+        private fun updateProgressBar(score: Int) {
+            this.activity.findViewById<ProgressBar>(R.id.progress).progress = score
         }
 
-        internal fun refreshView() {
-            updateProgressBar()
-            this.activity.findViewById<TextView>(R.id.english).text = this.activity.game.word.english
-            this.activity.findViewById<TextView>(R.id.foreign).text = this.activity.game.word.foreign
+        internal fun refreshView(english: String, foreign: String, score: Int) {
+            updateProgressBar(score)
+            this.activity.findViewById<TextView>(R.id.english).text = english
+            this.activity.findViewById<TextView>(R.id.foreign).text = foreign
             this.activity.findViewById<View>(R.id.foreign).visibility = View.INVISIBLE
             disable(R.id.pass)
             disable(R.id.fail)
@@ -138,8 +139,9 @@ class Game internal constructor(val realm: RealmDelegate) {
                     numberOfWords,
                     realm.realm)
 
-    internal lateinit var lesson: Lesson
-    internal lateinit var word: Word
+    private lateinit var lesson: Lesson
+
+    private lateinit var word: Word
 
     private fun incrementScoreOfCurrentWord() {
         realm.realm
@@ -149,7 +151,7 @@ class Game internal constructor(val realm: RealmDelegate) {
 
     private val random = Random()
 
-    private val subject: PublishSubject<Any> = PublishSubject.create<Any>()
+    private val subject: PublishSubject<WordAndScore> = PublishSubject.create<WordAndScore>()
 
     private fun chooseNext() {
         val notPracticedYet = lesson.scores
@@ -167,7 +169,7 @@ class Game internal constructor(val realm: RealmDelegate) {
             return
         }
         word = notPracticedYet[random.nextInt(notPracticedYet.size)]
-        subject.onNext("hello")
+        subject.onNext(WordAndScore(word.english, word.foreign, lesson.score()))
     }
 
     internal fun restoreOrCreateLesson(savedId: String?, language: DictionaryUtils.Lang, numberOfWords: Int) {
@@ -188,8 +190,18 @@ class Game internal constructor(val realm: RealmDelegate) {
         chooseNext()
     }
 
-    internal fun nextWordObservable(): Observable<Any> = subject
+    internal fun nextWordObservable(): Observable<WordAndScore> = subject
+
+    internal fun maxProgress() = lesson.numberOfAllWords() * MainActivity.NUMBER_OF_REPETITIONS
+
+    internal fun lessonId() = lesson.id
+
+    internal fun playCurrentWord(lang: String) {
+        play(word.foreign, lang)
+    }
 }
+
+data class WordAndScore(val english: String, val foreign: String, val score: Int)
 
 fun play(word: String, language: String) {
     Thread {
