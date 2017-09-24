@@ -137,7 +137,7 @@ final class DictionaryUtils {
         };
     }
 
-    enum Lang {
+    public enum Lang {
         GREEK("el"),
         ITALIAN("it");
 

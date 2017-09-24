@@ -3,7 +3,6 @@ package net.chmielowski.fiszki
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import android.util.Log
 import com.facebook.stetho.Stetho
 import com.uphyca.stetho_realm.RealmInspectorModulesProvider
 import io.realm.Realm
@@ -54,10 +53,12 @@ class MyCallbacks : Application.ActivityLifecycleCallbacks {
 
     private val realmDelegate = RealmDelegate()
 
+    private val lessonService = LessonService(realmDelegate)
+
     override fun onActivityCreated(activity: Activity?, p1: Bundle?) {
         if (activity is MainActivity) {
-            Log.i("pchm", MainActivity::realmDelegate.annotations.toString())
             activity.realmDelegate = realmDelegate
+            activity.service = lessonService
         }
     }
 

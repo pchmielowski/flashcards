@@ -1,7 +1,5 @@
 package net.chmielowski.fiszki;
 
-import com.annimon.stream.Stream;
-
 import org.junit.Test;
 
 /**
@@ -13,6 +11,6 @@ public class ExampleUnitTest {
 
     @Test
     public void addition_isCorrect() throws Exception {
-        Stream.of(DictionaryUtils.getLesson(DictionaryUtils.Lang.GREEK, 3, realm)).forEach(System.out::println);
+
     }
 }

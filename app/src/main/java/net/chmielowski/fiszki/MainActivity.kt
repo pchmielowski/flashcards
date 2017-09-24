@@ -1,6 +1,7 @@
 package net.chmielowski.fiszki
 
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Vibrator
@@ -9,35 +10,22 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import java.util.*
-import javax.inject.Inject
 
 
 class MainActivity : AppCompatActivity() {
-    private val NUMBER_OF_REPETITIONS = 2
     private val myView = MyView(this)
-    private val random = Random()
-    private lateinit var word: Word
-    @Inject
     internal lateinit var realmDelegate: RealmDelegate
-    private lateinit var lesson: Lesson
+    internal lateinit var service: LessonService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         RoomService().saveData(applicationContext)
         setContentView(R.layout.activity_main)
         realmDelegate.onCreate()
-        lesson = savedInstanceState
-                ?.getString(LESSON_ID)
-                ?.let {
-                    realmDelegate.realm
-                            .where(Lesson::class.java)
-                            .equalTo("id", it)
-                            .findFirst()
-                }
-                ?: DictionaryUtils.getLesson(
-                language,
-                numberOfWords,
-                realmDelegate.realm)
+        service.restoreOrCreateLesson(
+                savedInstanceState?.getLessonId(),
+                intent.language(),
+                intent.numberOfWords())
         val v = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         findViewById<View>(R.id.show).setOnClickListener {
             vibrate(v)
@@ -51,23 +39,22 @@ class MainActivity : AppCompatActivity() {
             vibrate(v)
             onFail()
         }
-        findViewById<ProgressBar>(R.id.progress).max = lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS
+        findViewById<ProgressBar>(R.id.progress).max = service.lesson.numberOfAllWords() * NUMBER_OF_REPETITIONS
         nextWord()
         findViewById<View>(R.id.play).setOnClickListener {
             vibrate(v)
-            play(word.foreign, language.shortcut)
+            play(service.word.foreign, intent.language().shortcut)
         }
     }
 
+    private fun Bundle.getLessonId() = this.getString(LESSON_ID)
 
-    private val numberOfWords: Int
-        get() = intent.getIntExtra(NUMBER_OF_WORDS, NUMBER_OF_REPETITIONS)
+    private fun Intent.numberOfWords() = this.getIntExtra(NUMBER_OF_WORDS, NUMBER_OF_REPETITIONS)
 
-    private val language: DictionaryUtils.Lang
-        get() = intent.getSerializableExtra(LANGUAGE) as DictionaryUtils.Lang
+    private fun Intent.language() = this.getSerializableExtra(LANGUAGE) as DictionaryUtils.Lang
 
     override fun onSaveInstanceState(outState: Bundle?) {
-        outState!!.putString(LESSON_ID, lesson.id)
+        outState!!.putString(LESSON_ID, service.lesson.id)
         super.onSaveInstanceState(outState)
     }
 
@@ -86,35 +73,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onPass() {
-        realmDelegate.realm
-                .executeTransaction { lesson.incrementScoreOf(word) }
+        service.incrementScoreOfCurrentWord()
         nextWord()
     }
 
-    private fun score() = lesson.score()
-
     private fun nextWord() {
-        chooseNext(andThen = Runnable { myView.refreshView() })
-    }
-
-    private fun chooseNext(andThen: Runnable) {
-        val unknown = lesson.scores
-                .filter { it.score < NUMBER_OF_REPETITIONS }
-                .map { it.word }
-                .toList()
-        val finished = unknown.isEmpty()
-        if (finished) {
-            realmDelegate.realm
-                    .executeTransaction { db ->
-                        lesson.groups.forEach { it.score++ }
-                        db.delete(Lesson::class.java)
-                        db.delete(WordScore::class.java)
-                    }
-            finish()
-            return
-        }
-        word = unknown[random.nextInt(unknown.size)]
-        andThen.run()
+        service.chooseNext(andThen = { myView.refreshView() },
+                onFinished = { finish() })
     }
 
     private class MyView internal constructor(private val activity: MainActivity) {
@@ -130,13 +95,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun updateProgressBar() {
-            (this.activity.findViewById<View>(R.id.progress) as ProgressBar).progress = this.activity.score()
+            (this.activity.findViewById<View>(R.id.progress) as ProgressBar).progress = this.activity.service.lesson.score()
         }
 
         internal fun refreshView() {
             updateProgressBar()
-            this.activity.findViewById<TextView>(R.id.english).text = this.activity.word.english
-            this.activity.findViewById<TextView>(R.id.foreign).text = this.activity.word.foreign
+            this.activity.findViewById<TextView>(R.id.english).text = this.activity.service.word.english
+            this.activity.findViewById<TextView>(R.id.foreign).text = this.activity.service.word.foreign
             this.activity.findViewById<View>(R.id.foreign).visibility = View.INVISIBLE
             disable(R.id.pass)
             disable(R.id.fail)
@@ -154,10 +119,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        val NUMBER_OF_REPETITIONS = 2
         val LANGUAGE = "language"
         val NUMBER_OF_WORDS = "number_of_words"
         private val LESSON_ID = "LESSON_ID"
     }
+}
+
+class LessonService internal constructor(val realm: RealmDelegate) {
+    internal fun persistedLesson(id: String) = realm.realm
+            .where(Lesson::class.java)
+            .equalTo("id", id)
+            .findFirst()
+
+    internal fun newLesson(language: DictionaryUtils.Lang, numberOfWords: Int) =
+            DictionaryUtils.getLesson(
+                    language,
+                    numberOfWords,
+                    realm.realm)
+
+    internal lateinit var lesson: Lesson
+    internal lateinit var word: Word
+
+    fun incrementScoreOfCurrentWord() {
+        realm.realm
+                .executeTransaction { lesson.incrementScoreOf(word) }
+
+    }
+
+    internal fun restoreOrCreateLesson(savedId: String?, language: DictionaryUtils.Lang, numberOfWords: Int) {
+        lesson = savedId
+                ?.let {
+                    persistedLesson(it)
+                }
+                ?: newLesson(language, numberOfWords)
+    }
+
+    private val random = Random()
+
+    internal fun chooseNext(andThen: () -> Unit, onFinished: () -> Unit) {
+        val notPracticedYet = lesson.scores
+                .filter { it.score < MainActivity.NUMBER_OF_REPETITIONS }
+                .map { it.word }
+                .toList()
+        if (notPracticedYet.isEmpty()) {
+            realm.realm
+                    .executeTransaction { db ->
+                        lesson.groups.forEach { it.score++ }
+                        db.delete(Lesson::class.java)
+                        db.delete(WordScore::class.java)
+                    }
+            onFinished.invoke()
+            return
+        }
+        word = notPracticedYet[random.nextInt(notPracticedYet.size)]
+        andThen.invoke()
+    }
+
 }
 
 fun play(word: String, language: String) {
