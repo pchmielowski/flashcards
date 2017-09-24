@@ -12,11 +12,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-//        multiDexEnabled true
     }
-//    dexOptions {
-//        preDexLibraries = false
-//    }
     buildTypes {
         release {
             minifyEnabled false
@@ -52,6 +48,8 @@ dependencies {
     compile 'com.uphyca:stetho_realm:2.1.0'
     compile 'com.android.support:recyclerview-v7:26.1.0'
     compile 'javax.inject:javax.inject:1'
+
+    compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.3'
 }
 repositories {
     mavenCentral()

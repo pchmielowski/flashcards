@@ -9,21 +9,15 @@ import net.chmielowski.fiszki.room.User;
 
 public class RoomService {
     public void saveData(Context context) {
-        new MyAsyncTask().execute(context);
-    }
-
-    private static class MyAsyncTask extends AsyncTask<Context, Object, Object> {
-
-        @Override
-        protected Object doInBackground(Context[] objects) {
+        AsyncTask.execute(() -> {
             User user = new User();
             user.firstName = "Piotrek";
             user.lastName = "Chmielowski";
-            Room.databaseBuilder(objects[0], AppDatabase.class, "training")
+            Room.databaseBuilder(context, AppDatabase.class, "training")
+                .fallbackToDestructiveMigration()
                 .build()
                 .userDao()
                 .insertAll(user);
-            return null;
-        }
+        });
     }
 }

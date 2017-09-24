@@ -53,12 +53,12 @@ class MyCallbacks : Application.ActivityLifecycleCallbacks {
 
     private val realmDelegate = RealmDelegate()
 
-    private val lessonService = LessonService(realmDelegate)
+    private val lessonService = Game(realmDelegate)
 
     override fun onActivityCreated(activity: Activity?, p1: Bundle?) {
         if (activity is MainActivity) {
             activity.realmDelegate = realmDelegate
-            activity.service = lessonService
+            activity.game = lessonService
         }
     }
 
