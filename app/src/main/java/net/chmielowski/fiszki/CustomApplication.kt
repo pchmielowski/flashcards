@@ -2,6 +2,7 @@ package net.chmielowski.fiszki
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import com.facebook.stetho.Stetho
 import com.uphyca.stetho_realm.RealmInspectorModulesProvider
@@ -14,7 +15,7 @@ class CustomApplication : Application() {
         super.onCreate()
         setupRealm()
         setupStetho()
-        this.registerActivityLifecycleCallbacks(MyCallbacks())
+        this.registerActivityLifecycleCallbacks(MyCallbacks(applicationContext))
     }
 
     private fun setupRealm() {
@@ -35,7 +36,7 @@ class CustomApplication : Application() {
     }
 }
 
-class MyCallbacks : Application.ActivityLifecycleCallbacks {
+class MyCallbacks(val context: Context) : Application.ActivityLifecycleCallbacks {
     override fun onActivityResumed(p0: Activity?) {
     }
 
@@ -55,10 +56,16 @@ class MyCallbacks : Application.ActivityLifecycleCallbacks {
 
     private val lessonService = Game(realmDelegate)
 
+    private val roomService = RoomService(context)
+
     override fun onActivityCreated(activity: Activity?, p1: Bundle?) {
         if (activity is MainActivity) {
             activity.realmDelegate = realmDelegate
             activity.game = lessonService
+            activity.roomService = roomService
+        }
+        if (activity is StartActivity) {
+            activity.roomService = roomService
         }
     }
 

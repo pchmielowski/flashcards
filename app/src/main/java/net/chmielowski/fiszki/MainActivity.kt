@@ -18,16 +18,18 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     private val myView = MyView(this)
 
-    private lateinit var realmDelegate: RealmDelegate
+    internal lateinit var realmDelegate: RealmDelegate
 
-    private lateinit var game: Game
+    internal lateinit var game: Game
 
     private lateinit var disposable: Disposable
 
+    lateinit var roomService: RoomService
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        RoomService().saveData(applicationContext)
         setContentView(R.layout.activity_main)
+        roomService.saveData()
         realmDelegate.onCreate()
         disposable = game.nextWordObservable()
                 .subscribe({

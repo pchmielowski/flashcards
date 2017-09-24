@@ -41,6 +41,7 @@ dependencies {
     def roomVersion = "1.0.0-beta1"
     implementation "android.arch.persistence.room:runtime:$roomVersion"
     annotationProcessor "android.arch.persistence.room:compiler:$roomVersion"
+    implementation "android.arch.persistence.room:rxjava2:$roomVersion"
     kapt "android.arch.persistence.room:compiler:$roomVersion"
 
 
@@ -49,6 +50,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:26.1.0'
     compile 'javax.inject:javax.inject:1'
 
+    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
     compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.3'
 }
 repositories {
